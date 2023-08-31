@@ -1,6 +1,7 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
 import json
+import TrashRobots.ipynb
 
 class Server(BaseHTTPRequestHandler):
     
