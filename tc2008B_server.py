@@ -1,7 +1,3 @@
-# TC2008B Modelación de Sistemas Multiagentes con gráficas computacionales
-# Python server to interact with Unity via POST
-# Sergio Ruiz-Loza, Ph.D. March 2021
-
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
 import json
