@@ -1,7 +1,11 @@
+# TC2008B Modelación de Sistemas Multiagentes con gráficas computacionales
+# Python server to interact with Unity via POST
+# Sergio Ruiz-Loza, Ph.D. March 2021
+
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
 import json
-import TrashRobots.ipynb
+from gridmodel import width, height, num_robots
 
 class Server(BaseHTTPRequestHandler):
     
@@ -15,14 +19,21 @@ class Server(BaseHTTPRequestHandler):
         self.wfile.write("GET request for {}".format(self.path).encode('utf-8'))
 
     def do_POST(self):
-        position = {
-            "x" : 1,
-            "y" : 2,
-            "z" : 3
-        }
+        #Enviar en formato JSON
+        if self.path == '/unity_url':
+            content_length = int(self.headers['Content-length'])
+            post_data = int(self.rfile.read(content_length).decode('utf-8'))
 
-        self._set_response()
-        self.wfile.write(str(position).encode('utf-8'))
+
+        data_to_send = {
+            "width": width,
+            "height": height, 
+            "robots": num_robots,
+            }
+        
+        #Solicitud HTTP POST a Unity para enviar datos
+        unity_url = "URL_DE_UNITY_AQUI" 
+        response = requests.post(unity_url, json=data_to_send)  #Enviar los datos JSON
 
 
 def run(server_class=HTTPServer, handler_class=Server, port=8585):

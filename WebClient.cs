@@ -1,60 +1,89 @@
-﻿// TC2008B Modelación de Sistemas Multiagentes con gráficas computacionales
-// C# client to interact with Python server via POST
-// Sergio Ruiz-Loza, Ph.D. March 2021
-
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
-using UnityEngine.Networking;
+using Newtonsoft.Json;
 
-public class WebClient : MonoBehaviour
+
+[System.Serializable]
+public class RobotData
 {
-    // IEnumerator - yield return
-    IEnumerator SendData(string data)
-    {
-        WWWForm form = new WWWForm();
-        form.AddField("bundle", "the data");
-        string url = "http://localhost:8585";
-        using (UnityWebRequest www = UnityWebRequest.Post(url, form))
-        {
-            byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(data);
-            www.uploadHandler = (UploadHandler)new UploadHandlerRaw(bodyRaw);
-            www.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
-            //www.SetRequestHeader("Content-Type", "text/html");
-            www.SetRequestHeader("Content-Type", "application/json");
+    public string unique_id;
+    public int posX;
+    public int posY;
+    public string type;
+    public bool display;
+}
 
-            yield return www.SendWebRequest();          // Talk to Python
-            if(www.isNetworkError || www.isHttpError)
+
+public class FetchDataFromAPI : MonoBehaviour
+{
+    public Transform sceneRoot;
+    public GameObject prefabAgent;
+
+    private string apiUrl = "http://127.0.0.1:8585/step";
+    private Dictionary<string, GameObject> agentsMap = new Dictionary<string, GameObject>();
+
+    public void OnEnable()
+    {
+        Timer.OnMinuteChanged += Run;
+    }
+
+    public void OnDisable()
+    {
+        Timer.OnMinuteChanged -= Run;
+    }
+
+    void Run()
+    {
+        StartCoroutine(FetchDataFromPython());
+    }
+
+    IEnumerator FetchDataFromPython()
+    {
+        using (var request = UnityEngine.Networking.UnityWebRequest.Get(apiUrl))
+        {
+            yield return request.SendWebRequest();
+
+            if (request.result != UnityEngine.Networking.UnityWebRequest.Result.Success)
             {
-                Debug.Log(www.error);
+                Debug.Log("Failed to fetch data from API: " + request.error);
+                yield break;
             }
-            else
+
+            string jsonResponse = request.downloadHandler.text;
+            
+            // Parse the JSON response and store it in a C# HashMap
+            AgentData[] data = JsonConvert.DeserializeObject<AgentData[]>(jsonResponse);
+
+            // Iterate through the data array
+            foreach (var agent in data)
             {
-                Debug.Log(www.downloadHandler.text);    // Answer from Python
-                Vector3 tPos = JsonUtility.FromJson<Vector3>(www.downloadHandler.text.Replace('\'', '\"'));
-                //Debug.Log("Form upload complete!");
-                Debug.Log(tPos);
+                string id = agent.id;
+                GameObject agentObj;
+
+                // Check if a GameObject with a Agent component exists for the current id
+                if (!agentsMap.ContainsKey(id))
+                {
+                    // Instantiate a new Agent prefab
+                    agentObj = Instantiate(prefabAgent, sceneRoot);
+
+                    // Add the new Agent to the dictionary
+                    agentsMap.Add(id, agentObj);
+
+                    // Move to initial position
+                    agentObj.transform.position = new Vector3(agent.posX, agent.posY, 0);
+                }
+                else {
+                    agentsMap.TryGetValue(id, out agentObj);
+                }
+                
+                // Set the id for the new Agent
+                agentObj.GetComponent<PersonAgent>().id = id;
+                agentObj.GetComponent<PersonAgent>().type = agent.type;
+                agentObj.GetComponent<PersonAgent>().positionToBe = new int[] { agent.posX, agent.posY };
+
+                // The updates to the new position will be done individually in each agent
             }
         }
-
-    }
-
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        //string call = "What's up?";
-        Vector3 fakePos = new Vector3(3.44f, 0, -15.707f);
-        string json = EditorJsonUtility.ToJson(fakePos);
-        //StartCoroutine(SendData(call));
-        StartCoroutine(SendData(json));
-        // transform.localPosition
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }
