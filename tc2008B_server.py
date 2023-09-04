@@ -5,7 +5,8 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
 import json
-from gridmodel import width, height, num_robots
+from gridmodel import ROW_COUNT, COL_COUNT, NUM_ROBOTS, GridModel
+import requests
 
 class Server(BaseHTTPRequestHandler):
     
@@ -23,16 +24,14 @@ class Server(BaseHTTPRequestHandler):
         if self.path == '/unity_url':
             content_length = int(self.headers['Content-length'])
             post_data = int(self.rfile.read(content_length).decode('utf-8'))
-
+            GRID = GridModel(GRID)
 
         data_to_send = {
-            "width": width,
-            "height": height, 
-            "robots": num_robots,
+            "matrix": GRID 
             }
         
         #Solicitud HTTP POST a Unity para enviar datos
-        unity_url = "URL_DE_UNITY_AQUI" 
+        unity_url = "http://localhost:8585" 
         response = requests.post(unity_url, json=data_to_send)  #Enviar los datos JSON
 
 
@@ -55,6 +54,3 @@ if __name__ == '__main__':
         run(port=int(argv[1]))
     else:
         run()
-
-
-
