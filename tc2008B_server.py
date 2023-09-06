@@ -2,7 +2,26 @@ import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
 import requests
-from gridModel import GRID
+import gridModel
+
+GRID = []
+
+with open("grid.txt", "r") as my_file:
+    for line in my_file:
+        data = line.split()
+        GRID.append(data)
+
+ROW_COUNT = int(GRID[0][0])
+COL_COUNT = int(GRID[0][1])
+GRID.pop(0)
+
+# counter = 0
+# while model.cleanFlag == False:
+#     model.step()
+#     counter += 1
+# if model.cleanFlag == True:
+#   print("step", counter)
+#   print("CLEAAAAN")
 
 class Server(BaseHTTPRequestHandler):
 
@@ -16,33 +35,44 @@ class Server(BaseHTTPRequestHandler):
         self.wfile.write("GET request for {}".format(self.path).encode('utf-8'))
 
     def do_POST(self):
-        if self.path == '/unity_url':
-            content_length = int(self.headers['Content-length'])
-            post_data = self.rfile.read(content_length).decode('utf-8')
+        counter = 0
+        list_to_send = []
+        while gridModel.model.cleanFlag == False:
+            data_to_send = {
+            "ROW_COUNT": int(ROW_COUNT),
+            "COL_COUNT": int(COL_COUNT),
+            "ROBOT_POSX": gridModel.model.robotPosx,
+            "ROBOT_POSY": gridModel.model.robotPosy,
+            "START_X": gridModel.model.startx,
+            "START_Y": gridModel.model.starty,
+            "KNOWN_GRID": gridModel.model.intGrid
+         }
             
-            # Parsea los datos JSON recibidos
-            data = json.loads(post_data)
-
-            # Accede a los datos individualmente
-            ROW_COUNT = data["ROW_COUNT"]
-            COL_COUNT = data["COL_COUNT"]
-            NUM_ROBOTS = data["NUM_ROBOTS"]
-
-            data["GRID"] = GRID
-            
-            print("Received POST data:")
-            print("ROW_COUNTTT:", ROW_COUNT)
-            print("COL_COUNTTT:", COL_COUNT)
-            print("NUM_ROBOTSSS:", NUM_ROBOTS)
-            print("GRID:", GRID)
-            
-            # Envía los datos JSON a Unity
-            unity_url = "http://localhost:8585" 
-            response = requests.post(unity_url, json=data)  # Enviar los datos JSON
-
-            self._set_response()
-            self.wfile.write("POST request received and processed successfully".encode('utf-8'))
-
+            #json_data = json.dumps(data_to_send)
+            #self.wfile.write(json_data.encode('utf-8')) 
+            list_to_send.append(data_to_send)
+            gridModel.model.step()
+            counter += 1 
+        data_to_send = {
+            "ROW_COUNT": int(ROW_COUNT),
+            "COL_COUNT": int(COL_COUNT),
+            "ROBOT_POSX": gridModel.model.robotPosx,
+            "ROBOT_POSY": gridModel.model.robotPosy,
+            "START_X": gridModel.model.startx,
+            "START_Y": gridModel.model.starty,
+            "KNOWN_GRID": gridModel.model.intGrid
+         }
+        list_to_send.append(data_to_send)
+        SendList = {
+            "STEP_LIST": list_to_send,
+        }
+        jsonlist = json.dumps(SendList)
+        #print("data::: ", json_data)
+        self._set_response()
+        self.wfile.write(jsonlist.encode('utf-8')) 
+        print("LIST :): ", jsonlist)
+        print("model.knowngrid", gridModel.model.knownGrid)
+        
 def run(server_class=HTTPServer, handler_class=Server, port=8585):
     logging.basicConfig(level=logging.INFO)
     server_address = ('', port)

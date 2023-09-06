@@ -60,9 +60,6 @@ def translateGrid():
             unknown_count += 1
     return robot_grid, start, papelera, unknown_count
 
-
-translateGrid()
-
 from os import truncate
 class Robot(Agent):
     def __init__(self, unique_id, model):
@@ -390,20 +387,18 @@ class Robot(Agent):
       self.model.cleanFlag = True
       return
 
-def get_grid(model):
-  return
-
 class GridModel(Model):
     def __init__(self, width, height, num_robots):
         self.grid = MultiGrid(width, height, torus=False)
         self.schedule = RandomActivation(self)
-        self.datacollector = DataCollector(
-            model_reporters={"Grid": get_grid}
-        )
         self.counter = 1
         self.knownGrid, self.start, self.papelera, self.unknown_count = translateGrid()
+        self.startx, self.starty = self.start
         self.goalPositions = []
         self.cleanFlag = False
+        self.robotPosx = []
+        self.robotPosy = []
+        self.intGrid = []
 
         #Create robots
         for i in range(num_robots):
@@ -412,7 +407,34 @@ class GridModel(Model):
             self.schedule.add(robot)
 
     def step(self):
-      self.datacollector.collect(self)
+      temp_listx = []
+      temp_listy = []
+      for agent in self.schedule.agents:
+        x, y = agent.pos
+        temp_listx.append(x)
+        temp_listy.append(y)
+      
+      known_grid = []      
+      for row in range(ROW_COUNT):
+        for col in range(COL_COUNT):
+          cell = self.knownGrid[row][col]
+          if cell == "P":
+            known_grid.append(3)
+          elif cell == "S":
+            known_grid.append(4)
+          elif cell == "U":
+            known_grid.append(0)
+          elif cell == "0":
+            known_grid.append(2)
+          elif cell == "X":
+            known_grid.append(5)
+          else:
+            known_grid.append(6)
+      self.intGrid = known_grid
+        
+      self.robotPosx = temp_listx
+      self.robotPosy = temp_listy
+
       self.schedule.step()
       self.counter += 1
 
@@ -421,12 +443,3 @@ NUM_ROBOTS = 5
 
 #Initialize model
 model = GridModel(ROW_COUNT, COL_COUNT, NUM_ROBOTS)
-counter = 0
-while model.cleanFlag == False:
-    model.step()
-    counter += 1
-if model.cleanFlag == True:
-  print("step", counter)
-  print("CLEAAAAN")
-
-grid = model.datacollector.get_model_vars_dataframe()
