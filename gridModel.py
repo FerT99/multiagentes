@@ -237,6 +237,7 @@ class Robot(Agent):
           elif self.isCellFree(start_x + 1, start_y  - y_dir):
             self.model.grid.move_agent(self, (start_x + 1, start_y  - y_dir))
           else:
+            self.getOut()
             print("backed into corner")
 
         elif y_dir == 0:
@@ -258,6 +259,7 @@ class Robot(Agent):
           elif self.isCellFree(start_x - x_dir, start_y  - 1):
             self.model.grid.move_agent(self, (start_x - x_dir, start_y - 1))
           else:
+            self.getOut()
             print("backed into corner")
 
       else:
@@ -287,6 +289,7 @@ class Robot(Agent):
             self.model.grid.move_agent(self, (start_x - x_dir, start_y))
 
         else:
+            self.getOut()
             print("error, moving away")
 
 

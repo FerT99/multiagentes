@@ -53,6 +53,7 @@ class Server(BaseHTTPRequestHandler):
             list_to_send.append(data_to_send)
             gridModel.model.step()
             counter += 1 
+            print("counter", counter)
         data_to_send = {
             "ROW_COUNT": int(ROW_COUNT),
             "COL_COUNT": int(COL_COUNT),
@@ -70,8 +71,8 @@ class Server(BaseHTTPRequestHandler):
         #print("data::: ", json_data)
         self._set_response()
         self.wfile.write(jsonlist.encode('utf-8')) 
-        print("LIST :): ", jsonlist)
-        print("model.knowngrid", gridModel.model.knownGrid)
+        #print("LIST :): ", jsonlist)
+        #print("model.knowngrid", gridModel.model.knownGrid)
         
 def run(server_class=HTTPServer, handler_class=Server, port=8585):
     logging.basicConfig(level=logging.INFO)
